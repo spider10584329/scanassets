@@ -51,7 +51,7 @@ export default function AdminDashboard() {
           
           // Generate the complete API URL with existing key
           const baseUrl = window.location.origin
-          const apiUrl = `${baseUrl}/api/scanandgo/inventory?customer_id=${user?.customerId}&apikey=${data.apiKey}`
+          const apiUrl = `${baseUrl}/api/scanassets/inventory?customer_id=${user?.customerId}&apikey=${data.apiKey}`
           setCompleteUrl(apiUrl)
         }
       }
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
         
         // Generate the complete API URL
         const baseUrl = window.location.origin
-        const apiUrl = `${baseUrl}/api/scanandgo/inventory?customer_id=${customerId}&apikey=${data.apiKey}`
+        const apiUrl = `${baseUrl}/api/scanassets/inventory?customer_id=${customerId}&apikey=${data.apiKey}`
         setCompleteUrl(apiUrl)
         
         toastSuccess('API key generated successfully!')
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
 
       // Fetch data using the temporary API key
       const baseUrl = window.location.origin
-      const apiUrl = `${baseUrl}/api/scanandgo/inventory?customer_id=${customerId}&apikey=${keyData.apiKey}`
+      const apiUrl = `${baseUrl}/api/scanassets/inventory?customer_id=${customerId}&apikey=${keyData.apiKey}`
       
       const response = await fetch(apiUrl)
       
