@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model role {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique(map: "name") @db.VarChar(120)
+  users users[]
+
+  @@map("role")
+}
+
+model users {
+  id       Int    @id @default(autoincrement())
+  username String @unique(map: "username") @db.VarChar(120)
+  password String @db.VarChar(120)
+  role     Int?
+  roleRef  role?  @relation(fields: [role], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "users_ibfk_1")
+
+  @@index([role], map: "role")
+  @@map("users")
+}
+
+model alembic_version {
+  version_num String @id @db.VarChar(32)
+}
+
+model inventories {
+  id                  Int        @id @default(autoincrement())
+  customer_id         Int
+  asset_id            Int?
+  location_id         Int?
+  purchase_date       String?    @db.VarChar(120)
+  last_date           String?    @db.VarChar(120)
+  ref_client          String?    @db.VarChar(120)
+  status              Int?
+  reg_date            String?    @db.VarChar(120)
+  inv_date            String?    @db.VarChar(120)
+  comment             String?    @db.VarChar(120)
+  rfid                String?    @db.VarChar(120)
+  operator_id         Int?
+  room_assignment     String?    @db.VarChar(120)
+  category_df_immonet String?    @db.VarChar(120)
+  purchase_amount     Int?
+  is_throw            Boolean?
+  locations           locations? @relation(fields: [location_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "inventories_ibfk_2")
+  assets              assets?    @relation(fields: [asset_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "inventories_ibfk_3")
+
+  @@index([operator_id], map: "operator_id")
+  @@index([customer_id], map: "customer_id")
+  @@index([location_id], map: "inventories_ibfk_2")
+  @@index([asset_id], map: "inventories_ibfk_3")
+}
+
+model operators {
+  id                Int     @id @default(autoincrement())
+  customer_id       Int
+  username          String  @unique(map: "username") @db.VarChar(120)
+  password          String  @db.VarChar(120)
+  passwordRequest   String? @db.VarChar(255)
+  isPasswordRequest Int?    @default(0) @db.TinyInt
+
+  @@index([customer_id], map: "customer_id")
+}
+
+model snapshots {
+  id          Int     @id @default(autoincrement())
+  customer_id Int?
+  name        String? @db.VarChar(120)
+  date        String? @db.VarChar(120)
+}
+
+model apikey {
+  id          Int      @id @default(autoincrement())
+  customer_id Int
+  api_key     String   @db.VarChar(255)
+  created_at  DateTime @db.DateTime(0)
+
+  @@map("apikey")
+}
+
+model assets {
+  id          Int           @id @default(autoincrement())
+  customer_id Int
+  name        String        @unique(map: "name") @db.VarChar(120)
+  barcode     String?       @db.VarChar(120)
+  inventories inventories[]
+
+  @@index([customer_id], map: "customer_id")
+}
+
+model locations {
+  id          Int           @id @default(autoincrement())
+  customer_id Int
+  name        String        @unique(map: "name") @db.VarChar(120)
+  inventories inventories[]
+
+  @@index([customer_id], map: "customer_id")
+}
