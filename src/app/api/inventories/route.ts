@@ -28,18 +28,52 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const locationId = searchParams.get('location_id')
+    const searchTerm = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
 
     // Build the where clause
-    const whereClause: { customer_id: number; location_id?: number } = {
+    const whereClause: {
+      customer_id: number;
+      location_id?: number;
+      OR?: Array<{
+        rfid?: { contains: string };
+        assets?: { name?: { contains: string } };
+        locations?: { name?: { contains: string } };
+      }>;
+    } = {
       customer_id: customerId
     }
 
     // If location_id is provided, filter by it
     if (locationId) {
       whereClause.location_id = parseInt(locationId)
+    }
+
+    // If search term is provided, add search conditions
+    if (searchTerm && searchTerm.trim()) {
+      whereClause.OR = [
+        {
+          rfid: {
+            contains: searchTerm.trim()
+          }
+        },
+        {
+          assets: {
+            name: {
+              contains: searchTerm.trim()
+            }
+          }
+        },
+        {
+          locations: {
+            name: {
+              contains: searchTerm.trim()
+            }
+          }
+        }
+      ]
     }
 
     // Get total count for pagination

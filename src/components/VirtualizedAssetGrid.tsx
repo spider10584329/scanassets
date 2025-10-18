@@ -1,53 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-
-// Simple notification system to avoid circular dependencies
-const showSuccess = (message: string) => {
-  // For now, we'll use a simple method to avoid import issues
-  if (typeof window !== 'undefined') {
-    // Create a simple success notification
-    const notification = document.createElement('div')
-    notification.textContent = message
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #10B981;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      z-index: 1000;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    `
-    document.body.appendChild(notification)
-    setTimeout(() => document.body.removeChild(notification), 3000)
-  }
-}
-
-const showError = (message: string) => {
-  // For now, we'll use a simple method to avoid import issues
-  if (typeof window !== 'undefined') {
-    // Create a simple error notification
-    const notification = document.createElement('div')
-    notification.textContent = message
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #EF4444;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      z-index: 1000;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    `
-    document.body.appendChild(notification)
-    setTimeout(() => document.body.removeChild(notification), 3000)
-  }
-}
+import { toastSuccess, toastError } from '@/components/ui/toast'
 
 interface Asset {
   id: number
@@ -68,13 +22,14 @@ interface Asset {
 
 interface VirtualizedAssetGridProps {
   selectedLocationId: number | null
+  searchTerm?: string
 }
 
 const ITEMS_PER_PAGE = 20
 // const ITEM_HEIGHT = 280 // Approximate height of each asset card
 // const BUFFER_SIZE = 5 // Number of items to render outside viewport
 
-export default function VirtualizedAssetGrid({ selectedLocationId }: VirtualizedAssetGridProps) {
+export default function VirtualizedAssetGrid({ selectedLocationId, searchTerm }: VirtualizedAssetGridProps) {
   const [assets, setAssets] = useState<Asset[]>([])
   const [totalAssets, setTotalAssets] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -88,14 +43,14 @@ export default function VirtualizedAssetGrid({ selectedLocationId }: Virtualized
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadingRef = useRef<HTMLDivElement>(null)
 
-  // Reset when location changes
+  // Reset when location or search term changes
   useEffect(() => {
     setAssets([])
     setPage(1)
     setHasMore(true)
     setTotalAssets(0)
     fetchAssets(1, true)
-  }, [selectedLocationId])
+  }, [selectedLocationId, searchTerm])
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -135,10 +90,13 @@ export default function VirtualizedAssetGrid({ selectedLocationId }: Virtualized
         return
       }
 
-      // Build URL with pagination and optional location filter
+      // Build URL with pagination and optional location filter and search
       let url = `/api/inventories?page=${pageNum}&limit=${ITEMS_PER_PAGE}`
       if (selectedLocationId) {
         url += `&location_id=${selectedLocationId}`
+      }
+      if (searchTerm && searchTerm.trim()) {
+        url += `&search=${encodeURIComponent(searchTerm.trim())}`
       }
       
       const response = await fetch(url, {
@@ -212,12 +170,12 @@ export default function VirtualizedAssetGrid({ selectedLocationId }: Virtualized
             ? { ...asset, asset_name: editAssetName.trim() || null }
             : asset
         ))
-        showSuccess('Asset name updated successfully!')
+        toastSuccess('Asset name updated successfully!')
       } else {
-        showError('Failed to update asset name. Please try again.')
+        toastError('Failed to update asset name. Please try again.')
       }
     } catch {
-      showError('Failed to update asset. Please try again.')
+      toastError('Failed to update asset. Please try again.')
     }
   }
 
@@ -246,12 +204,12 @@ export default function VirtualizedAssetGrid({ selectedLocationId }: Virtualized
         // Remove asset from local state
         setAssets(prev => prev.filter(asset => asset.id !== id))
         setTotalAssets(prev => prev - 1)
-        showSuccess('Asset deleted successfully!')
+        toastSuccess('Asset deleted successfully!')
       } else {
-        showError('Failed to delete asset. Please try again.')
+        toastError('Failed to delete asset. Please try again.')
       }
     } catch {
-      showError('Failed to delete asset. Please try again.')
+      toastError('Failed to delete asset. Please try again.')
     }
   }
 

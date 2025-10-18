@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { toastSuccess, toastError } from '@/components/ui/toast'
 import VirtualizedAssetGrid from '@/components/VirtualizedAssetGrid'
+import DashboardSearch from '@/components/DashboardSearch'
 
 interface Location {
   id: number
