@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
       asset_name: inventory.assets?.name || null,
       location_id: inventory.location_id,
       location_name: inventory.locations?.name || null,
+      barcode: inventory.assets?.barcode || null,
       purchase_date: inventory.purchase_date,
       last_date: inventory.last_date,
       ref_client: inventory.ref_client,
