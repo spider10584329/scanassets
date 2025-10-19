@@ -13,47 +13,49 @@ interface Location {
   }
 }
 
-interface Asset {
-  id: number
-  customer_id: number
-  asset_id: number
-  asset_name: string | null
-  location_id: number
-  location_name: string | null
-  rfid: string | null
-  purchase_date: string | null
-  last_date: string | null
-  ref_client: string | null
-  status: string | null
-  reg_date: string | null
-  inv_date: string | null
-  comment: string | null
-}
+// interface Asset {
+//   id: number
+//   customer_id: number
+//   asset_id: number
+//   asset_name: string | null
+//   location_id: number
+//   location_name: string | null
+//   rfid: string | null
+//   purchase_date: string | null
+//   last_date: string | null
+//   ref_client: string | null
+//   status: string | null
+//   reg_date: string | null
+//   inv_date: string | null
+//   comment: string | null
+// }
 
 // Function to decode JWT token
-const decodeJWT = (token: string) => {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) {
-      throw new Error('Invalid JWT format')
-    }
+// const decodeJWT = (token: string) => {
+//   try {
+//     const parts = token.split('.')
+//     if (parts.length !== 3) {
+//       throw new Error('Invalid JWT format')
+//     }
     
-    // Decode the payload (second part)
-    const payload = parts[1]
-    const decoded = JSON.parse(atob(payload))
-    return decoded
-  } catch (error) {
-    return null
-  }
-}
+//     // Decode the payload (second part)
+//     const payload = parts[1]
+//     const decoded = JSON.parse(atob(payload))
+//     return decoded
+//   } catch (error) {
+//     return null
+//   }
+// }
 
 export default function AdminDashboard() {
   const [locations, setLocations] = useState<Location[]>([])
+  const [allLocations, setAllLocations] = useState<Location[]>([]) // Store all locations for filtering
   const [newLocationName, setNewLocationName] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null)
   const [editingLocation, setEditingLocation] = useState<Location | null>(null)
   const [editLocationName, setEditLocationName] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
 
 
   useEffect(() => {
@@ -80,7 +82,9 @@ export default function AdminDashboard() {
       
       if (response.ok) {
         const data = await response.json()
-        setLocations(data.locations || [])
+        const fetchedLocations = data.locations || []
+        setAllLocations(fetchedLocations)
+        setLocations(fetchedLocations)
       } else {
         // Handle error silently
       }
@@ -188,11 +192,143 @@ export default function AdminDashboard() {
     setEditLocationName('')
   }
 
+  // Search functionality
+  const handleSearch = useCallback(async (term: string) => {
+    setSearchTerm(term)
+    
+    if (!term.trim()) {
+      // Reset to show all locations when search is cleared
+      setLocations(allLocations)
+      setSelectedLocationId(null)
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('auth-token') || document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth-token='))
+        ?.split('=')[1]
+        
+      if (!token) return
+
+      // Build comprehensive search data by fetching all assets for all locations
+      const searchData = await Promise.all(
+        allLocations.map(async (location) => {
+          try {
+            const response = await fetch(`/api/inventories?location_id=${location.id}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            })
+            
+            if (response.ok) {
+              const data = await response.json()
+              return {
+                location,
+                assets: data.inventories || []
+              }
+            }
+            return {
+              location,
+              assets: []
+            }
+          } catch (error) {
+            return {
+              location,
+              assets: []
+            }
+          }
+        })
+      )
+
+      // Filter based on search term
+      const searchTermLower = term.toLowerCase()
+      const matchingResults = []
+
+      for (const locationData of searchData) {
+        const { location, assets } = locationData
+        
+        // Check if location name matches
+        const locationMatches = location.name.toLowerCase().includes(searchTermLower)
+        
+        // Check if any assets in this location match
+        const matchingAssets = assets.filter((asset: {
+          asset_name?: string | null;
+          rfid?: string | null;
+          ref_client?: string | null;
+        }) => 
+          (asset.asset_name && asset.asset_name.toLowerCase().includes(searchTermLower)) ||
+          (asset.rfid && asset.rfid.toLowerCase().includes(searchTermLower)) ||
+          (asset.ref_client && asset.ref_client.toLowerCase().includes(searchTermLower))
+        )
+
+        // Include location if either location name matches OR it has matching assets
+        if (locationMatches || matchingAssets.length > 0) {
+          matchingResults.push({
+            location,
+            hasLocationMatch: locationMatches,
+            hasAssetMatch: matchingAssets.length > 0,
+            matchingAssetsCount: matchingAssets.length
+          })
+        }
+      }
+
+      // Update locations list with matching locations
+      const matchingLocations = matchingResults.map(result => result.location)
+      setLocations(matchingLocations)
+
+      // Auto-select location logic
+      if (matchingResults.length === 1) {
+        // Only one location has matches - select it
+        setSelectedLocationId(matchingResults[0].location.id)
+      } else if (matchingResults.length > 1) {
+        // Multiple locations have matches
+        const locationsWithAssetMatches = matchingResults.filter(result => result.hasAssetMatch)
+        
+        if (locationsWithAssetMatches.length === 1) {
+          // Only one location has matching assets - select it
+          setSelectedLocationId(locationsWithAssetMatches[0].location.id)
+        } else {
+          // Multiple locations have matches - don't auto-select
+          setSelectedLocationId(null)
+        }
+      } else {
+        // No matches found
+        setLocations(allLocations)
+        setSelectedLocationId(null)
+      }
+
+    } catch (error) {
+      console.error('Search error:', error)
+      // On error, show all locations
+      setLocations(allLocations)
+      setSelectedLocationId(null)
+    }
+  }, [allLocations])
+
+  // Memoized filtered locations based on search
+  const displayedLocations = useMemo(() => {
+    if (!searchTerm.trim()) return allLocations
+    return locations
+  }, [locations, allLocations, searchTerm])
 
 
   return (
     <div className="h-[calc(100vh-80px)] overflow-hidden flex flex-col p-2 sm:p-3 md:p-4 lg:p-6">
-      <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 lg:mb-6 flex-shrink-0">Dashboard</h1>
+      {/* Header section with title and search */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 mb-3 sm:mb-4 lg:mb-6 flex-shrink-0">
+        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">Dashboard</h1>
+        <div className="w-full md:w-auto md:max-w-md">
+          <DashboardSearch 
+            onSearch={handleSearch}
+            value={searchTerm}
+            placeholder="Search locations and assets..."
+            className="w-full"
+          />
+        </div>
+      </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 flex-1 min-h-0">
         <div className="flex flex-col min-h-0">         
           <div className="bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col h-full">
@@ -224,6 +360,8 @@ export default function AdminDashboard() {
               </button>
             </div>
 
+
+
             {/* Location list */}
             <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
               {loading ? (
@@ -236,10 +374,12 @@ export default function AdminDashboard() {
                 </div>
               ) : !localStorage.getItem('auth-token') && !document.cookie.includes('auth-token=') ? (
                 <div className="text-gray-500 text-center py-4 text-sm">Please log in to view locations</div>
-              ) : locations.length === 0 ? (
-                <div className="text-gray-500 text-center py-4 text-sm">No locations found</div>
+              ) : displayedLocations.length === 0 ? (
+                <div className="text-gray-500 text-center py-4 text-sm">
+                  {searchTerm.trim() ? 'No locations found matching search criteria' : 'No locations found'}
+                </div>
               ) : (
-                locations.map((location) => (
+                displayedLocations.map((location) => (
                   <div
                     key={location.id}
                     className={`border rounded-lg transition-colors ${
@@ -338,7 +478,10 @@ export default function AdminDashboard() {
               )}
             </h2>
             <div className="flex-1 min-h-0">
-              <VirtualizedAssetGrid selectedLocationId={selectedLocationId} />
+              <VirtualizedAssetGrid 
+                selectedLocationId={selectedLocationId} 
+                searchTerm={searchTerm}
+              />
             </div>            
           </div>
         </div>
