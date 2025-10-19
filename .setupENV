@@ -8,14 +8,14 @@
 # ===========================================
 # MariaDB/MySQL Database Connection
 # Format: mysql://username:password@host:port/database_name
-DATABASE_URL="mysql://node:Find71-eye43@localhost:3306/scanassets_prod"
+DATABASE_URL="mysql://root@localhost:3306/scanassets_prod"
 
 # Alternative database configuration (if needed)
 DB_HOST="localhost"
 DB_PORT="3306"
 DB_NAME="scanassets_prod"
-DB_USER="node"
-DB_PASSWORD="Find71-eye43"
+DB_USER="root"
+DB_PASSWORD=""
 
 # ===========================================
 # NEXT.JS CONFIGURATION
@@ -36,12 +36,13 @@ NEXTAUTH_SECRET="qMNz0XN8Mv3iThVE0q2lBL3VviFPydWaSD/oNgpxcZg="
 # APPLICATION CONFIGURATION
 # ===========================================
 # Application name and version
-APP_NAME="ScanAndGo"
+APP_NAME="ScanAssets"
 APP_VERSION="0.1.0"
 
-# Default admin user (created during database initialization)
-DEFAULT_ADMIN_EMAIL="admin@scanandgo.com"
-DEFAULT_ADMIN_PASSWORD="admin123"
+# Backend URL for asset images
+NEXT_PUBLIC_ORIGINAL_BACKEND_URL="https://api.scanassets.com/"
+
+
 
 # ===========================================
 # SECURITY CONFIGURATION

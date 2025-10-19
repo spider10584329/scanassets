@@ -270,7 +270,7 @@ export default function VirtualizedAssetGrid({ selectedLocationId, searchTerm }:
             {/* Asset Image */}
             <div className="aspect-square bg-white border border-gray-200 rounded-lg mb-3 overflow-hidden">
               <img
-                src={`${process.env.NEXT_PUBLIC_ORIGINAL_BACKEND_URL || 'http://localhost:3000'}/photo/assets/${asset.asset_id}.png`}
+                src={`${process.env.NEXT_PUBLIC_ORIGINAL_BACKEND_URL || 'http://localhost:3000'}/photo/assets?filepath=${asset.asset_id}.png`}
                 alt={asset.asset_name || `Asset ${asset.asset_id}`}
                 className="w-full h-full object-cover"
                 loading="lazy"
