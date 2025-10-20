@@ -26,8 +26,14 @@ export default function DashboardSearch({
 
   const handleSearchChange = useCallback((inputValue: string) => {
     setSearchTerm(inputValue)
-    onSearch(inputValue)
-  }, [onSearch])
+    // Don't trigger search on every keystroke anymore
+  }, [])
+
+  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onSearch(searchTerm)
+    }
+  }, [onSearch, searchTerm])
 
   const handleClear = useCallback(() => {
     setSearchTerm('')
@@ -57,6 +63,7 @@ export default function DashboardSearch({
           type="text"
           value={searchTerm}
           onChange={(e) => handleSearchChange(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder={placeholder}
           className="w-full max-w-[350px] text-[14px] pl-10 pr-10 py-2 border border-gray-300 rounded-full focus:outline-none focus:border-gray-400 bg-white text-gray-900 placeholder-gray-500"
         />

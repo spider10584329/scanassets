@@ -6,6 +6,7 @@ import VirtualizedAssetGrid from '@/components/VirtualizedAssetGrid'
 import DashboardSearch from '@/components/DashboardSearch'
 import { useClientName } from '@/hooks/useClientName'
 import { useClientNameContext } from '@/contexts/ClientNameContext'
+import Image from 'next/image'
 
 interface Location {
   id: number
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
   const [editingLocation, setEditingLocation] = useState<Location | null>(null)
   const [editLocationName, setEditLocationName] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [inputSearchTerm, setInputSearchTerm] = useState('') // For the input field
   const [isUpdateDropdownOpen, setIsUpdateDropdownOpen] = useState(false)
   const [editingTitle, setEditingTitle] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
@@ -220,6 +222,7 @@ export default function AdminDashboard() {
   // Search functionality
   const handleSearch = useCallback(async (term: string) => {
     setSearchTerm(term)
+    setInputSearchTerm(term) // Update input term to match search term
     
     if (!term.trim()) {
       // Reset to show all locations when search is cleared
@@ -460,10 +463,12 @@ export default function AdminDashboard() {
                     className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
                     {isUpdating && (
-                      <img 
+                      <Image 
                         src="/6-dots-spinner.svg" 
                         alt="Loading..." 
-                        className="w-3 h-3 mr-1"
+                        width={12}
+                        height={12}
+                        className="mr-1"
                       />
                     )}
                     Save
@@ -476,8 +481,8 @@ export default function AdminDashboard() {
         <div className="w-full md:w-auto md:max-w-md">
           <DashboardSearch 
             onSearch={handleSearch}
-            value={searchTerm}
-            placeholder="Search locations and assets..."
+            value={inputSearchTerm}
+            placeholder="Search locations and assets... (Press Enter to search)"
             className="w-full"
           />
         </div>
@@ -491,9 +496,11 @@ export default function AdminDashboard() {
             {/* Add new location */}
             <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4 flex-shrink-0">
               <div className="relative flex-1">
-                <img 
+                <Image 
                   src="/location.svg" 
                   alt="Location" 
+                  width={20}
+                  height={20}
                   className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none opacity-40" 
                 />
                 <input
@@ -520,10 +527,12 @@ export default function AdminDashboard() {
             <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
               {loading ? (
                 <div className="flex justify-center items-center py-8">
-                  <img 
+                  <Image 
                     src="/6-dots-spinner.svg" 
                     alt="Loading..." 
-                    className="w-8 h-8 sm:w-10 sm:h-10 opacity-60"
+                    width={40}
+                    height={40}
+                    className="opacity-60"
                   />
                 </div>
               ) : !localStorage.getItem('auth-token') && !document.cookie.includes('auth-token=') ? (
