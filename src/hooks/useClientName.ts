@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useClientNameContext } from '@/contexts/ClientNameContext'
 
 export function useClientName() {
-  const [clientName, setClientName] = useState<string>('SCANANDGO')
+  const [clientName, setClientName] = useState<string>('SCANASSETS')
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const { registerRefreshCallback, unregisterRefreshCallback } = useClientNameContext()
 
@@ -12,13 +12,14 @@ export function useClientName() {
     const token = localStorage.getItem('auth-token') || document.cookie.split('; ').find(row => row.startsWith('auth-token='))?.split('=')[1]
     
     if (!token) {
-      setClientName('SCANANDGO')
+      setClientName('SCANASSETS')
       setIsLoading(false)
       return
     }
     
     try {
-      const response = await fetch('/api/client', {
+      // Add cache busting to ensure we get fresh data
+      const response = await fetch(`/api/client?t=${Date.now()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -27,19 +28,22 @@ export function useClientName() {
       
       const data = await response.json()
       if (data.success) {
-        setClientName(data.clientname || 'SCANANDGO')
+        const newClientName = data.clientname || 'SCANASSETS'
+        setClientName(newClientName)
+        console.log('Client name updated to:', newClientName) // Debug log
       } else {
-        setClientName('SCANANDGO')
+        setClientName('SCANASSETS')
       }
     } catch (error) {
       console.error('Error fetching client name:', error)
-      setClientName('SCANANDGO')
+      setClientName('SCANASSETS')
     } finally {
       setIsLoading(false)
     }
   }, [])
 
   const refreshClientName = useCallback(() => {
+    console.log('Refreshing client name...') // Debug log
     setIsLoading(true)
     fetchClientName()
   }, [fetchClientName])

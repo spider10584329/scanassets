@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       `
       
       const clientArray = client as Array<{ clientname: string }>
-      const clientName = clientArray.length > 0 ? clientArray[0].clientname : 'scanandgo'
+      const clientName = clientArray.length > 0 ? clientArray[0].clientname : 'ScanAssets'
       
       return NextResponse.json({ 
         clientname: clientName,
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       // If clients table doesn't exist or query fails, return default
 
       return NextResponse.json({ 
-        clientname: 'scanandgo',
+        clientname: 'ScanAssets',
         success: true,
         customerId: decoded.customerId
       })
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Failed to fetch client name',
-        clientname: 'scanandgo',
+        clientname: 'ScanAssets',
         success: false 
       },
       { status: 500 }

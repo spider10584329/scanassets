@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { toastSuccess, toastError } from '@/components/ui/toast'
 import VirtualizedAssetGrid from '@/components/VirtualizedAssetGrid'
 import DashboardSearch from '@/components/DashboardSearch'
+import { useClientName } from '@/hooks/useClientName'
+import { useClientNameContext } from '@/contexts/ClientNameContext'
 
 interface Location {
   id: number
@@ -56,7 +58,30 @@ export default function AdminDashboard() {
   const [editingLocation, setEditingLocation] = useState<Location | null>(null)
   const [editLocationName, setEditLocationName] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [isUpdateDropdownOpen, setIsUpdateDropdownOpen] = useState(false)
+  const [editingTitle, setEditingTitle] = useState('')
+  const [isUpdating, setIsUpdating] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  
+  const { clientName } = useClientName()
+  const { refreshClientName } = useClientNameContext()
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsUpdateDropdownOpen(false)
+      }
+    }
+
+    if (isUpdateDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isUpdateDropdownOpen])
 
   useEffect(() => {
     fetchLocations()
@@ -318,7 +343,136 @@ export default function AdminDashboard() {
     <div className="h-[calc(100vh-80px)] overflow-hidden flex flex-col p-2 sm:p-3 md:p-4 lg:p-6">
       {/* Header section with title and search */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 mb-3 sm:mb-4 lg:mb-6 flex-shrink-0">
-        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">Dashboard</h1>
+        <div className="flex items-center gap-3 relative" ref={dropdownRef}>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900"> Dashboard ({clientName})</h1>
+          <button
+            onClick={() => {
+              if (!isUpdateDropdownOpen) {
+                setEditingTitle(clientName)
+              }
+              setIsUpdateDropdownOpen(!isUpdateDropdownOpen)
+            }}
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            title="Update settings"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+          
+          {/* Update Dropdown */}
+          {isUpdateDropdownOpen && (
+            <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">
+                    Client Name (Display Title)
+                  </label>
+                  <input
+                    id="edit-title"
+                    type="text"
+                    value={editingTitle}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value.length <= 12) {
+                        setEditingTitle(value)
+                      }
+                    }}
+                    maxLength={12}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    placeholder="Enter client name"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Maximum 12 characters. This will appear in the sidebar, dashboard title, and throughout the application
+                  </p>
+                </div>
+                
+                <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+                  <button
+                    onClick={() => {
+                      setIsUpdateDropdownOpen(false)
+                      setEditingTitle(clientName)
+                    }}
+                    disabled={isUpdating}
+                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!editingTitle.trim()) {
+                        toastError('Client name is required')
+                        return
+                      }
+
+                      if (editingTitle.trim().length > 12) {
+                        toastError('Client name cannot be longer than 12 characters')
+                        return
+                      }
+
+                      setIsUpdating(true)
+                      
+                      try {
+                        const token = localStorage.getItem('auth-token') || document.cookie
+                          .split('; ')
+                          .find(row => row.startsWith('auth-token='))
+                          ?.split('=')[1]
+
+                        if (!token) {
+                          toastError('Authentication required')
+                          return
+                        }
+
+                        // Update client name via API
+                        const response = await fetch('/api/client', {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                          },
+                          body: JSON.stringify({ clientname: editingTitle.trim() })
+                        })
+
+                        if (response.ok) {
+                          // Refresh client name in the hook (this will update both sidebar and dashboard title)
+                          // First trigger the context refresh
+                          refreshClientName()
+                          
+                          // Also force a page refresh of the client name by re-fetching after a short delay
+                          setTimeout(() => {
+                            refreshClientName()
+                          }, 200)
+                          
+                          toastSuccess('Client name updated successfully!')
+                          setIsUpdateDropdownOpen(false)
+                        } else {
+                          const data = await response.json()
+                          toastError(data.error || 'Failed to update client name')
+                        }
+                      } catch (error) {
+                        console.error('Error updating client name:', error)
+                        toastError('Failed to update client name. Please try again.')
+                      } finally {
+                        setIsUpdating(false)
+                      }
+                    }}
+                    disabled={isUpdating || !editingTitle.trim()}
+                    className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  >
+                    {isUpdating && (
+                      <img 
+                        src="/6-dots-spinner.svg" 
+                        alt="Loading..." 
+                        className="w-3 h-3 mr-1"
+                      />
+                    )}
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="w-full md:w-auto md:max-w-md">
           <DashboardSearch 
             onSearch={handleSearch}

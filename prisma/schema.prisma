@@ -102,3 +102,11 @@ model locations {
 
   @@index([customer_id], map: "customer_id")
 }
+
+model clients {
+  id          Int    @id @default(autoincrement())
+  customer_id Int    @unique
+  clientname  String @db.VarChar(120)
+
+  @@index([customer_id], map: "customer_id")
+}
