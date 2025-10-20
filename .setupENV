@@ -8,14 +8,14 @@
 # ===========================================
 # MariaDB/MySQL Database Connection
 # Format: mysql://username:password@host:port/database_name
-DATABASE_URL="mysql://root@localhost:3306/scanassets_prod"
+DATABASE_URL="mysql://node:Find71-eye43@localhost:3306/scanassets_prod"
 
 # Alternative database configuration (if needed)
 DB_HOST="localhost"
 DB_PORT="3306"
 DB_NAME="scanassets_prod"
-DB_USER="root"
-DB_PASSWORD=""
+DB_USER="node"
+DB_PASSWORD="Find71-eye43"
 
 # ===========================================
 # NEXT.JS CONFIGURATION

@@ -1,27 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import jwt from 'jsonwebtoken'
+import { verifyToken, extractTokenFromRequest } from '@/lib/jwt'
 
 const prisma = new PrismaClient()
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('🔍 Inventories API called:', request.url)
+    
+    const token = extractTokenFromRequest(request)
+    if (!token) {
+      console.log('❌ No token provided')
       return NextResponse.json({ error: 'No token provided' }, { status: 401 })
     }
 
-    const token = authHeader.substring(7)
-    
-    let decoded: { customerId?: number }
-    try {
-      decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET!) as { customerId?: number }
-    } catch {
+    console.log('🔑 Token extracted:', token.substring(0, 20) + '...')
+
+    const decoded = await verifyToken(token)
+    if (!decoded) {
+      console.log('❌ Token verification failed')
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
+    console.log('✅ Token verified, customer ID:', decoded.customerId)
+
     const customerId = decoded.customerId
     if (!customerId) {
+      console.log('❌ No customer ID in token')
       return NextResponse.json({ error: 'Invalid token - no customer ID' }, { status: 401 })
     }
 
@@ -76,10 +81,15 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    console.log('📊 Query parameters:', { locationId, searchTerm, page, limit, offset })
+    console.log('🔍 Where clause:', JSON.stringify(whereClause, null, 2))
+
     // Get total count for pagination
     const totalCount = await prisma.inventories.count({
       where: whereClause
     })
+
+    console.log('📈 Total count:', totalCount)
 
     // Fetch inventory data with pagination
     const inventories = await prisma.inventories.findMany({
@@ -94,6 +104,8 @@ export async function GET(request: NextRequest) {
       skip: offset,
       take: limit
     })
+
+    console.log('📦 Inventories found:', inventories.length)
 
     // Transform the data
     const transformedInventories = inventories.map((inventory) => ({
@@ -127,7 +139,8 @@ export async function GET(request: NextRequest) {
       hasMore: offset + inventories.length < totalCount
     })
 
-  } catch {
+  } catch (error) {
+    console.error('💥 Inventories API error:', error)
     return NextResponse.json({
       success: false,
       error: 'Internal server error'
