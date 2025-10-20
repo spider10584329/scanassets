@@ -34,9 +34,9 @@ export default function Home() {
           <Image 
             src="/logo.webp" 
             alt="Scanandgo Logo" 
-            width={64}
-            height={64}
-            className="mx-auto h-16 w-auto"
+            width={32}
+            height={32}
+            className="mx-auto h-12 w-auto"
           />
         </div>
         

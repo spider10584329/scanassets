@@ -135,9 +135,9 @@ const Sidebar = memo(forwardRef<SidebarRef, SidebarProps>(function Sidebar({ rol
             <Image 
                 src="/logo.webp" 
                 alt="Scanandgo Logo" 
-                width={isCollapsed ? 40 : 64}
-                height={isCollapsed ? 40 : 64}
-                className="w-auto"
+                width={isCollapsed ? 28 : 64}
+                height={isCollapsed ? 28 : 64}
+                className={isCollapsed ? 'w-12 h-12' : 'w-16 h-16'}
                 />
           </div>
           {!isCollapsed && (
