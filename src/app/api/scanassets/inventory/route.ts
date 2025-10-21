@@ -66,26 +66,26 @@ export async function GET(request: NextRequest) {
     // Transform the data to include names instead of IDs
     type InventoryWithRelations = typeof inventories[0]
     const transformedInventories = inventories.map((inventory: InventoryWithRelations) => ({
-      id: inventory.id,
-      customer_id: inventory.customer_id,
-      asset_id: inventory.asset_id,
-      asset_name: inventory.assets?.name || null,
-      location_id: inventory.location_id,
-      location_name: inventory.locations?.name || null,
-      barcode: inventory.assets?.barcode || null,
-      purchase_date: inventory.purchase_date,
-      last_date: inventory.last_date,
-      ref_client: inventory.ref_client,
-      status: inventory.status,
-      reg_date: inventory.reg_date,
-      inv_date: inventory.inv_date,
-      comment: inventory.comment,
-      rfid: inventory.rfid,
-      operator_id: inventory.operator_id,
-      room_assignment: inventory.room_assignment,
-      category_df_immonet: inventory.category_df_immonet,
-      purchase_amount: inventory.purchase_amount,
-      is_throw: inventory.is_throw
+     // id: inventory.id,
+     // customer_id: inventory.customer_id,
+     location_name: inventory.locations?.name || null,
+     asset_id: inventory.asset_id,
+     asset_name: inventory.assets?.name || null,
+    //  location_id: inventory.location_id,      
+     barcode: inventory.assets?.barcode || null
+     // purchase_date: inventory.purchase_date,
+     // last_date: inventory.last_date,
+     // ref_client: inventory.ref_client,
+     // status: inventory.status,
+     // reg_date: inventory.reg_date,
+     //inv_date: inventory.inv_date,
+     // comment: inventory.comment,
+     // rfid: inventory.rfid,
+      //operator_id: inventory.operator_id,
+     // room_assignment: inventory.room_assignment,
+      //category_df_immonet: inventory.category_df_immonet,
+      //purchase_amount: inventory.purchase_amount,
+      //is_throw: inventory.is_throw
     }))
 
     return NextResponse.json(transformedInventories)
