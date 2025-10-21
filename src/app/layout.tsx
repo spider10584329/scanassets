@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ScanAndGo - Smart Inventory Management",
+  title: "Scanassets-Assets Management",
   description: "A sophisticated web application for inventory management with role-based access control",
 };
 

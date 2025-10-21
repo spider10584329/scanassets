@@ -46,8 +46,7 @@ export default function VirtualizedAssetGrid({ selectedLocationId, searchTerm }:
   const loadingRef = useRef<HTMLDivElement>(null)
 
   // Reset when location or search term changes
-  useEffect(() => {
-    console.log('🎯 Location/search changed:', { selectedLocationId, searchTerm })
+  useEffect(() => {    
     setAssets([])
     setPage(1)
     setHasMore(true)
@@ -76,27 +75,21 @@ export default function VirtualizedAssetGrid({ selectedLocationId, searchTerm }:
     }
   }, [hasMore, loading, loadingMore])
 
-  const fetchAssets = async (pageNum: number, reset: boolean = false) => {
-    console.log('🔄 fetchAssets called:', { pageNum, reset, selectedLocationId, searchTerm })
+  const fetchAssets = async (pageNum: number, reset: boolean = false) => {   
     
     try {
       if (reset) {
-        setLoading(true)
-        console.log('⏳ Set loading to true (reset)')
+        setLoading(true)      
       } else {
-        setLoadingMore(true)
-        console.log('⏳ Set loadingMore to true')
+        setLoadingMore(true)       
       }
 
       const token = localStorage.getItem('auth-token') || document.cookie
         .split('; ')
         .find(row => row.startsWith('auth-token='))
         ?.split('=')[1]
-        
-      console.log('🔑 Token found:', !!token, token ? `${token.substring(0, 20)}...` : 'none')
-      
+
       if (!token) {
-        console.error('❌ No token found, returning early')
         return
       }
 
@@ -107,60 +100,41 @@ export default function VirtualizedAssetGrid({ selectedLocationId, searchTerm }:
       }
       if (searchTerm && searchTerm.trim()) {
         url += `&search=${encodeURIComponent(searchTerm.trim())}`
-      }
-      
-      console.log('🌐 Making API request to:', url)
-      
+      }    
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
       
-      console.log('📡 Response received:', { 
-        status: response.status, 
-        statusText: response.statusText, 
-        ok: response.ok 
-      })
-      
+     
       if (response.ok) {
-        const data = await response.json()
-        console.log('📊 API Response data:', data)
+        const data = await response.json()       
+
+        const newAssets = data.inventories || []        
         
-        const newAssets = data.inventories || []
-        console.log('📦 New assets:', newAssets.length, newAssets)
-        
-        if (reset) {
-          console.log('🔄 Resetting assets array with new data')
+        if (reset) {      
           setAssets(newAssets)
-        } else {
-          console.log('➕ Appending to existing assets')
+        } else {          
           setAssets(prev => {
-            const updated = [...prev, ...newAssets]
-            console.log('📋 Updated assets array length:', updated.length)
+            const updated = [...prev, ...newAssets]            
             return updated
           })
         }
         
-        setTotalAssets(data.total || 0)
-        console.log('🔢 Total assets set to:', data.total || 0)
+        setTotalAssets(data.total || 0)      
         
         const hasMoreCalc = newAssets.length === ITEMS_PER_PAGE && (reset ? newAssets.length : assets.length + newAssets.length) < (data.total || 0)
-        setHasMore(hasMoreCalc)
-        console.log('📄 Has more pages:', hasMoreCalc)
-      } else {
-        console.error('❌ API request failed:', response.status, response.statusText)
+        setHasMore(hasMoreCalc)       
+      } else {        
         const errorText = await response.text()
-        console.error('❌ Error response:', errorText)
         if (reset) setAssets([])
       }
-    } catch (error) {
-      console.error('💥 Exception in fetchAssets:', error)
+    } catch (error) {      
       if (reset) setAssets([])
     } finally {
       setLoading(false)
-      setLoadingMore(false)
-      console.log('✅ fetchAssets completed, loading states reset')
+      setLoadingMore(false)      
     }
   }
 
@@ -249,8 +223,7 @@ export default function VirtualizedAssetGrid({ selectedLocationId, searchTerm }:
     }
   }
 
-  if (loading && assets.length === 0) {
-    console.log('🔄 Showing loading spinner (loading=true, assets.length=0)')
+  if (loading && assets.length === 0) {    
     return (
       <div className="flex justify-center items-center py-8">
         <img 
@@ -262,8 +235,7 @@ export default function VirtualizedAssetGrid({ selectedLocationId, searchTerm }:
     )
   }
 
-  if (!selectedLocationId && assets.length === 0 && !loading) {
-    console.log('📍 No location selected message')
+  if (!selectedLocationId && assets.length === 0 && !loading) {    
     return (
       <div className="text-gray-500 text-center py-4 text-sm">
         Select a location to view assets
@@ -271,23 +243,14 @@ export default function VirtualizedAssetGrid({ selectedLocationId, searchTerm }:
     )
   }
 
-  if (selectedLocationId && assets.length === 0 && !loading) {
-    console.log('🔍 No assets found message for location:', selectedLocationId)
+  if (selectedLocationId && assets.length === 0 && !loading) {   
     return (
       <div className="text-gray-500 text-center py-4 text-sm">
         No assets found for this location
       </div>
     )
   }
-
-  console.log('🎨 Rendering asset grid:', { 
-    assetsCount: assets.length, 
-    totalAssets, 
-    selectedLocationId,
-    loading,
-    loadingMore,
-    hasMore
-  })
+ 
 
   return (
     <div ref={containerRef} className="h-full overflow-y-auto">

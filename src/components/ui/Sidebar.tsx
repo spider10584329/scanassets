@@ -37,13 +37,7 @@ const adminMenuItems: MenuItem[] = [
     label: 'API Key', 
     href: '/admin/apikey', 
     icon: <Image src="/key.svg" alt="API Key" width={20} height={20} />
-  },
-  { 
-    id: 'snapshot', 
-    label: 'Snapshot', 
-    href: '/admin/snapshot', 
-    icon: <Image src="/snapshot.svg" alt="Snapshot" width={20} height={20} />
-  },
+  },  
   { 
     id: 'user', 
     label: 'User', 
