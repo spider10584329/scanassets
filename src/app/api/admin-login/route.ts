@@ -16,15 +16,15 @@ export async function POST(request: NextRequest) {
     
     try {
       // Try to authenticate with PulsePoint API
-      const response = await axios.post('https://api.pulsepoint.myrfid.nc/api/user/project/signin', {
+      const response = await axios.post('https://api.pulsepoint.clinotag.com/api/user/project/signin', {
         username: email,
         password: password,
-        projectId: 7
+        projectId: 17
       })
 
       if (response.data.status === 1) {
         // Get user details from PulsePoint
-        const userDetailsResponse = await axios.get('https://api.pulsepoint.myrfid.nc/api/user/allusers', {
+        const userDetailsResponse = await axios.get('https://api.pulsepoint.clinotag.com/api/user/allusers', {
           auth: {
             username: 'admin',
             password: 'admin'
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: false,
-        message: 'Login failed'
+        message: 'Login failed : Find out about your subscription status for this project.'
       })
     } catch (apiError) {
       console.error('PulsePoint API error:', apiError)
