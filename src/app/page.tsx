@@ -211,7 +211,7 @@ export default function Home() {
                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
             <div className="w-full h-full flex flex-col items-center justify-center">
               <Image 
-                src="/logo.webp" 
+                src="/logo-bleu.svg" 
                 alt="ShareCells Logo" 
                 width={50}
                 height={50}
