@@ -87,7 +87,7 @@ export default function Home() {
           toastError(response.data.message || 'Login failed. Please check your credentials.')
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error)
       toastError('Failed to connect to server')
     } finally {
@@ -193,9 +193,10 @@ export default function Home() {
       } else {
         throw new Error(data.message || 'Registration failed')
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Registration error:', err)
-      toastError(err.message || 'Failed to register. Please try again.')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to register. Please try again.'
+      toastError(errorMessage)
     } finally {
       setSubmitLoading(false)
     }
