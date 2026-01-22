@@ -70,6 +70,8 @@ export class SessionCleanup {
 
   /**
    * Clean up expired tokens and session data
+   * OPTIMIZATION: This is now only called on visibility change in AuthContext
+   * to prevent excessive API calls
    */
   static async cleanupExpiredSessions(): Promise<void> {
     try {
@@ -79,18 +81,31 @@ export class SessionCleanup {
         return
       }
 
-      // Verify token with server
-      const response = await fetch('/api/verify-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      })
+      // Verify token with server with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
-      if (!response.ok || !(await response.json()).valid) {
+      try {
+        const response = await fetch('/api/verify-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token }),
+          signal: controller.signal,
+        })
 
-        this.clearAuthData()
+        clearTimeout(timeoutId)
+
+        if (!response.ok || !(await response.json()).valid) {
+          this.clearAuthData()
+        }
+      } catch (error) {
+        clearTimeout(timeoutId)
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.warn('SessionCleanup: Token verification timed out')
+        }
+        throw error
       }
     } catch (error) {
       console.error('SessionCleanup: Error during cleanup:', error)
@@ -101,15 +116,15 @@ export class SessionCleanup {
 
   /**
    * Set up cleanup on page load
+   * OPTIMIZATION: Removed automatic cleanup intervals to prevent memory leaks
    */
   static initializeCleanup(): void {
-    // Clean up on page load
+    // Clean up on page load only if session was marked as ending
     window.addEventListener('load', () => {
       const sessionEnding = sessionStorage.getItem('session-ending')
       const sessionClosed = sessionStorage.getItem('session-closed')
       
       if (sessionEnding === 'true' || sessionClosed === 'true') {
-
         this.clearAuthData()
         sessionStorage.removeItem('session-ending')
         sessionStorage.removeItem('session-closed')
@@ -121,12 +136,7 @@ export class SessionCleanup {
       sessionStorage.setItem('session-ending', 'true')
     })
 
-    // Clean up on visibility change (tab switching)
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        this.cleanupExpiredSessions()
-      }
-    })
+    // REMOVED: visibility change cleanup moved to AuthContext to prevent duplicate API calls
   }
 }
 

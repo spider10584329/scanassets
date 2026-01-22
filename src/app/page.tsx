@@ -114,54 +114,10 @@ export default function Home() {
     setSubmitLoading(true)
 
     try {
-      // Check if admin email exists in PulsePoint API
-      const adminCheckResponse = await fetch('https://api.pulsepoint.clinotag.com/api/user/allusers', {
-        method: 'GET',
-        headers: {
-          'Authorization': 'Basic ' + btoa('admin:admin'),
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!adminCheckResponse.ok) {
-        throw new Error('Failed to verify administrator email')
-      }
-
-      const adminData = await adminCheckResponse.json()
-      const allUsers = adminData?.data || adminData || []
+      // SECURITY FIX: All admin email verification and registration is now server-side
+      // This prevents exposing API credentials and reduces client-side traffic
       
-      const adminUser = allUsers.find((user: { email?: string; id: number }) => 
-        user.email?.toLowerCase() === formData.email.toLowerCase()
-      )
-      
-      if (!adminUser) {
-        toastError('Administrator email does not exist in PulsePoint system.')
-        setSubmitLoading(false)
-        return
-      }
-
-      const customerId = adminUser.id
-
-      // Check if username already exists
-      const usernameCheckResponse = await fetch('/api/check-username', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.username,
-        }),
-      })
-
-      const usernameCheck = await usernameCheckResponse.json()
-      
-      if (usernameCheck.exists) {
-        toastError('Account already exists with this username. Please choose another.')
-        setSubmitLoading(false)
-        return
-      }
-
-      // Register the new user
+      // Register the new user (server will validate admin email and check username)
       const response = await fetch('/api/register-user', {
         method: 'POST',
         headers: {
@@ -171,7 +127,6 @@ export default function Home() {
           adminEmail: formData.email,
           username: formData.username,
           password: formData.password,
-          customerId,
         }),
       })
 

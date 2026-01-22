@@ -33,51 +33,17 @@ export default function UserRegister({ onBackToLogin }: UserRegisterProps) {
     }
     
     try {      
-      const adminCheckResponse = await axios.get('https://api.pulsepoint.myrfid.nc/api/user/allusers', {
-        auth: {
-          username: 'admin',
-          password: 'admin'
-        }
-      })
+      // SECURITY FIX: Removed direct external API calls to prevent traffic leaks
+      // Admin verification is now handled server-side via /api/register-user
+      // This prevents exposing API credentials in client-side code
       
-      const allUsers = adminCheckResponse.data?.data || adminCheckResponse.data || []
-      
-      // Check if admin email exists in the user list and get their ID
-      const adminUser = allUsers.find((user: { email?: string; id: number }) => 
-        user.email?.toLowerCase() === adminEmail.toLowerCase()
-      )
-      
-      if (!adminUser) {
-        toastError('Administrator address does not exist.')
-        setIsLoading(false)
-        return
-      }
-      const customerId = adminUser.id      
-     
-      try {
-        const usernameCheckResponse = await axios.post('/api/check-username', {
-          username: username
-        })
-        
-        if (usernameCheckResponse.data.exists) {
-          toastError('Account already exists.')
-          setIsLoading(false)
-          return
-        }
-      } catch (dbError: unknown) {
-        console.error('Username check error:', dbError)
-        toastError('Failed to check username availability.')
-        setIsLoading(false)
-        return
-      }
-      
-      // Step 4: Register the new user in local MariaDB
+      // Step 1: Register the new user (server will validate admin email)
       try {
         const registrationResponse = await axios.post('/api/register-user', {
           adminEmail,
           username,
           password,
-          customerId
+          // customerId will be determined server-side after admin verification
         })
         
         if (registrationResponse.data.success) {

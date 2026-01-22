@@ -124,9 +124,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json()
 
+      console.log('AuthProvider: Token verification response:', {
+        valid: data.valid,
+        isActive: data.payload?.isActive,
+        customerId: data.payload?.customerId,
+        role: data.payload?.role
+      })
       
       if (data.valid && data.payload?.isActive && data.payload?.customerId) {
-
         // Store token only after successful verification
         localStorage.setItem('auth-token', token)
         document.cookie = `auth-token=${token}; path=/; max-age=${12 * 60 * 60}; secure; samesite=strict`
@@ -136,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return true
       } else {
-        console.error('AuthProvider: Token validation failed - invalid payload or missing customerId:', {
+        console.error('AuthProvider: Token validation failed:', {
           valid: data.valid,
           isActive: data.payload?.isActive,
           customerId: data.payload?.customerId,
@@ -216,20 +221,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [getCookieValue, clearAuthData])
 
-  // Separate effect for periodic cleanup - only runs when user is logged in
-  useEffect(() => {
-    if (!user) return
+  // REMOVED: Periodic cleanup interval to prevent memory leaks and excessive server requests
+  // Token validation now only happens on:
+  // 1. Initial page load
+  // 2. Tab visibility change (when user returns to the tab)
+  // 3. Explicit user actions (login, logout)
+  // This prevents unnecessary API calls every 10 minutes that can accumulate and cause 504 errors
 
-    const intervalId = setInterval(() => {
-      clearStaleTokens()
-    }, 10 * 60 * 1000) // 10 minutes
-
-    return () => {
-      clearInterval(intervalId)
-    }
-  }, [user, clearStaleTokens])
-
-  // Browser session cleanup
+  // Browser session cleanup and visibility-based token validation
   useEffect(() => {
     const handleBeforeUnload = () => {
       // Mark session as closed for potential cleanup on next visit
@@ -244,8 +243,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Validate token when user returns to tab (prevents excessive API calls)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        // Only validate if user is logged in and tab becomes visible
+        clearStaleTokens()
+      }
+    }
+
     window.addEventListener('beforeunload', handleBeforeUnload)
     window.addEventListener('load', handleLoad)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     // Check on component mount
     handleLoad()
@@ -253,8 +261,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       window.removeEventListener('load', handleLoad)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [clearStaleTokens])
+  }, [clearStaleTokens, user])
 
   return (
     <AuthContext.Provider

@@ -1,12 +1,10 @@
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
 
 export async function initializeDatabase() {
   try {   
-    // Test basic connection
-    await prisma.$connect()
+    // OPTIMIZATION: Removed explicit $connect() - Prisma manages connections automatically
+    // This prevents unnecessary connection overhead
     
     // Test tables access
     try {
@@ -44,16 +42,13 @@ export async function initializeDatabase() {
   } catch (error) {
     console.error('Database initialization error:', error)
     throw error // Re-throw to let caller handle
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
 // SAFE: Test database connection without modifying anything
 export async function testDatabaseConnection() {
   try {
-    // Test basic connection
-    await prisma.$connect()
+    // OPTIMIZATION: Removed explicit $connect() - Prisma manages connections automatically
     
     // Check what tables exist (read-only)
     await prisma.$queryRaw`SHOW TABLES`
@@ -75,7 +70,5 @@ export async function testDatabaseConnection() {
   } catch (error) {
     console.error('Database connection test failed:', error)
     return false
-  } finally {
-    await prisma.$disconnect()
   }
 }

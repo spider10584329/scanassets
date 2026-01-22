@@ -16,7 +16,8 @@ DB_PORT="3306"
 DB_NAME="scanassets_prod"
 DB_USER="node"
 DB_PASSWORD="Find71-eye43"
-
+PULSEPOINT_API_USERNAME="admin"
+PULSEPOINT_API_PASSWORD="admin"
 # ===========================================
 # NEXT.JS CONFIGURATION
 # ===========================================
